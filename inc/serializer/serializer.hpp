@@ -1,159 +1,77 @@
 #pragma once
 
-#include <endian.h>
+#include <bit>
+#include <cassert>
 #include <string>
 #include <string_view>
 #include <type_traits>
 
 namespace serializer
 {
+	inline constexpr bool isBigEndian = std::endian::native == std::endian::big;
+
+	template<typename I, typename B>
+	inline I rawFromBytes(const B* buf)
+	{
+		return *(I*)buf;
+	}
+	template<typename I>
+	inline I rawFromBytes(std::string_view buf)
+	{
+		assert(buf.size() == sizeof(I));
+		return *(I*)buf.data();
+	}
+
 	template<typename I, typename B>
 	inline I readBE(const B* buf)
 	{
-		constexpr auto bytes = sizeof(I);
-
-		static_assert(bytes >= sizeof(uint8_t) && bytes <= sizeof(uint64_t), "Invalid amount of bytes");
-
-		switch(bytes)
-		{
-			case sizeof(uint8_t):
-				return *buf;
-			case sizeof(uint16_t):
-				return be16toh(*(uint16_t*)buf);
-			case sizeof(uint32_t):
-				return be32toh(*(uint32_t*)buf);
-			case sizeof(uint64_t):
-				return be64toh(*(uint64_t*)buf);
-			default:
-				return 0;
-		}
+		if constexpr(isBigEndian)
+			return rawFromBytes<I, B>(buf);
+		else
+			return std::byteswap(rawFromBytes<I, B>(buf));
 	}
 	template<typename I>
 	inline I readBE(std::string_view buf)
 	{
-		constexpr auto bytes = sizeof(I);
-
-		static_assert(bytes >= sizeof(uint8_t) && bytes <= sizeof(uint64_t), "Invalid amount of bytes");
-
-		switch(bytes)
-		{
-			case sizeof(uint8_t):
-				return *buf.data();
-			case sizeof(uint16_t):
-				return be16toh(*(uint16_t*)buf.data());
-			case sizeof(uint32_t):
-				return be32toh(*(uint32_t*)buf.data());
-			case sizeof(uint64_t):
-				return be64toh(*(uint64_t*)buf.data());
-			default:
-				return 0;
-		}
+		if constexpr(isBigEndian)
+			return rawFromBytes<I>(buf);
+		else
+			return std::byteswap(rawFromBytes<I>(buf));
 	}
+
 	template<typename I, typename B>
 	inline B* readBE(B* buf, I& num)
 	{
-		constexpr auto bytes = sizeof(I);
-
-		static_assert(bytes >= sizeof(uint8_t) && bytes <= sizeof(uint64_t), "Invalid amount of bytes");
-
-		switch(bytes)
-		{
-			case sizeof(uint8_t):
-				num = *buf;
-				break;
-			case sizeof(uint16_t):
-				num = be16toh(*(uint16_t*)buf);
-				break;
-			case sizeof(uint32_t):
-				num = be32toh(*(uint32_t*)buf);
-				break;
-			case sizeof(uint64_t):
-				num = be64toh(*(uint64_t*)buf);
-				break;
-			default:
-				return buf;
-		}
-		return buf + bytes;
+		num = readBE<I, B>(buf);
+		return buf + sizeof(I);
 	}
 	template<typename I>
 	inline void readBE(std::string_view buf, I& num)
 	{
-		constexpr auto bytes = sizeof(I);
+		num = readBE<I>(buf);
+	}
 
-		static_assert(bytes >= sizeof(uint8_t) && bytes <= sizeof(uint64_t), "Invalid amount of bytes");
-
-		switch(bytes)
-		{
-			case sizeof(uint8_t):
-				num = *buf.data();
-				break;
-			case sizeof(uint16_t):
-				num = be16toh(*(uint16_t*)buf.data());
-				break;
-			case sizeof(uint32_t):
-				num = be32toh(*(uint32_t*)buf.data());
-				break;
-			case sizeof(uint64_t):
-				num = be64toh(*(uint64_t*)buf.data());
-				break;
-			default:
-				return;
-		}
+	template<typename I, typename B>
+	inline B* writeRawBytes(I num, B* buf)
+	{
+		assert(std::is_const_v<B> == false);
+		*(I*)buf = num;
+		return buf + sizeof(I);
 	}
 
 	template<typename I, typename B>
 	inline B* writeBE(I num, B* buf)
 	{
-		static_assert(std::is_const_v<B> == false, "Buffer must not be const");
-
-		constexpr auto bytes = sizeof(I);
-
-		static_assert(bytes >= sizeof(uint8_t) && bytes <= sizeof(uint64_t), "Invalid amount of bytes");
-
-		switch(bytes)
-		{
-			case sizeof(uint8_t):
-				*buf = num;
-				break;
-			case sizeof(uint16_t):
-				*(uint16_t*)buf = htobe16(num);
-				break;
-			case sizeof(uint32_t):
-				*(uint32_t*)buf = htobe32(num);
-				break;
-			case sizeof(uint64_t):
-				*(uint64_t*)buf = htobe64(num);
-				break;
-			default:
-				return buf;
-		}
-		return buf + bytes;
+		if constexpr(isBigEndian)
+			return writeRawBytes<I, B>(num, buf);
+		else
+			return writeRawBytes<I, B>(std::byteswap(num), buf);
 	}
 	template<typename I>
 	inline std::string toBEString(I num)
 	{
-		constexpr auto bytes = sizeof(I);
-
-		static_assert(bytes >= sizeof(uint8_t) && bytes <= sizeof(uint64_t), "Invalid amount of bytes");
-
-		std::string buf(bytes, '\0');
-		switch(bytes)
-		{
-			case sizeof(uint8_t):
-				*buf.data() = num;
-				break;
-			case sizeof(uint16_t):
-				*(uint16_t*)buf.data() = htobe16(num);
-				break;
-			case sizeof(uint32_t):
-				*(uint32_t*)buf.data() = htobe32(num);
-				break;
-			case sizeof(uint64_t):
-				*(uint64_t*)buf.data() = htobe64(num);
-				break;
-			default:
-				return buf;
-		}
+		std::string buf(sizeof(I), '\0');
+		writeBE<I>(num, buf.data());
 		return buf;
 	}
 }

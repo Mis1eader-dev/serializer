@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.18.4)
 
 project(
 	serializer
-	VERSION 1.0.0
+	VERSION 1.0.1
 	LANGUAGES CXX
 )
 
@@ -14,7 +14,7 @@ add_library(${PROJECT_NAME} INTERFACE)
 
 set_target_properties(${PROJECT_NAME}
 	PROPERTIES
-	CXX_STANDARD 20
+	CXX_STANDARD 23
 	CXX_EXTENSIONS OFF
 )
 
