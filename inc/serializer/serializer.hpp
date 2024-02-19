@@ -18,7 +18,7 @@ namespace serializer
 	template<typename I>
 	inline I rawFromBytes(std::string_view buf)
 	{
-		assert(buf.size() == sizeof(I));
+		assert(buf.size() >= sizeof(I));
 		return *(I*)buf.data();
 	}
 
