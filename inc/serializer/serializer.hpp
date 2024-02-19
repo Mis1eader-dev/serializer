@@ -43,13 +43,13 @@ namespace serializer
 	inline const B* readBE(const B* buf, I& num)
 	{
 		num = readBE<I, B>(buf);
-		return (uint8_t*)buf + sizeof(I);
+		return (const B*)((uint8_t*)buf + sizeof(I));
 	}
 	template<typename I, typename B>
 	inline B* readBE(B* buf, I& num)
 	{
 		num = readBE<I, B>(buf);
-		return (uint8_t*)buf + sizeof(I);
+		return (B*)((uint8_t*)buf + sizeof(I));
 	}
 	template<typename I>
 	inline void readBE(std::string_view buf, I& num)
@@ -69,7 +69,7 @@ namespace serializer
 	{
 		assert(std::is_const_v<B> == false);
 		*(I*)buf = num;
-		return (uint8_t*)buf + sizeof(I);
+		return (B*)((uint8_t*)buf + sizeof(I));
 	}
 
 	template<typename I, typename B>
