@@ -40,6 +40,12 @@ namespace serializer
 	}
 
 	template<typename I, typename B>
+	inline const B* readBE(const B* buf, I& num)
+	{
+		num = readBE<I, B>(buf);
+		return (uint8_t*)buf + sizeof(I);
+	}
+	template<typename I, typename B>
 	inline B* readBE(B* buf, I& num)
 	{
 		num = readBE<I, B>(buf);
@@ -49,6 +55,13 @@ namespace serializer
 	inline void readBE(std::string_view buf, I& num)
 	{
 		num = readBE<I>(buf);
+	}
+	/// Removes the [buf]'s prefix by that many bytes read.
+	template<typename I>
+	inline void readBE(I& num, std::string_view& buf)
+	{
+		num = readBE<I>(buf);
+		buf.remove_prefix(sizeof(I));
 	}
 
 	template<typename I, typename B>
